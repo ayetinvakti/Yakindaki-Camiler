@@ -413,13 +413,15 @@
                 const lon = position.coords.longitude;
                 
                 try {
-                    // Yarıçapı 10 km'ye çıkarıp hem node hem de way/relation merkezlerini tarayacak daha kapsamlı bir sorgu kurduk
+                    // Genişletilmiş ve her tür ibadethane/cami etiketini yakalayan sorgu (15 km çap)
                     const query = `[out:json][timeout:15];
                     (
-                      node(around:10000,${lat},${lon})[amenity=place_of_worship];
-                      way(around:10000,${lat},${lon})[amenity=place_of_worship];
-                      node(around:10000,${lat},${lon})[religion=muslim];
-                      way(around:10000,${lat},${lon})[religion=muslim];
+                      node(around:15000,${lat},${lon})[amenity=place_of_worship];
+                      way(around:15000,${lat},${lon})[amenity=place_of_worship];
+                      node(around:15000,${lat},${lon})[religion=muslim];
+                      way(around:15000,${lat},${lon})[religion=muslim];
+                      node(around:15000,${lat},${lon})["building"="mosque"];
+                      way(around:15000,${lat},${lon})["building"="mosque"];
                     );
                     out body;
                     >;
@@ -435,22 +437,20 @@
 
                     let elements = data.elements ? data.elements.filter(item => item.lat && item.lon) : [];
 
-                    if (elements.length === 0) {
-                        container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:20px; line-height: 1.5;">${t.no_mosque}</div>`;
-                        return;
-                    }
-
-                    // Benzersiz camileri toplamak için ID süzgeci
                     let uniqueMosques = {};
                     elements.forEach(item => {
                         const mLat = item.lat;
                         const mLon = item.lon;
-                        const name = (item.tags && (item.tags.name || item.tags['name:tr'] || item.tags['official_name'])) || "";
+                        const tags = item.tags || {};
+                        const name = tags.name || tags['name:tr'] || tags['official_name'] || "";
                         
-                        // Sadece cami veya ibadethane olanları filtrele
-                        const isMosque = name.toLowerCase().includes('cami') || 
-                                         name.toLowerCase().includes('mescit') || 
-                                         (item.tags && (item.tags.religion === 'muslim' || item.tags.amenity === 'place_of_worship'));
+                        // İsimde veya etiketlerde cami/mescit ibaresi geçiyorsa veya Müslüman ibadethanesiyse al
+                        const nameLower = name.toLowerCase();
+                        const isMosque = nameLower.includes('cami') || 
+                                         nameLower.includes('mescit') || 
+                                         tags.religion === 'muslim' || 
+                                         tags.amenity === 'place_of_worship' ||
+                                         tags.building === 'mosque';
 
                         if (isMosque) {
                             const key = `${mLat.toFixed(4)},${mLon.toFixed(4)}`;
@@ -466,8 +466,16 @@
                     let mosques = Object.values(uniqueMosques);
                     mosques.sort((a, b) => a.dist - b.dist);
 
+                    // Eğer açık kaynak haritada o mahalle camileri hiç eklenmemişse, kullanıcı mağdur olmasın diye 
+                    // en üst üste Google Haritalar köprüsünü akıllı bir uyarı ile sunuyoruz.
                     if (mosques.length === 0) {
-                        container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:20px; line-height: 1.5;">${t.no_mosque}</div>`;
+                        container.innerHTML = `
+                            <div style="text-align:center; color:var(--text-muted); padding:20px; line-height: 1.6;">
+                                ${t.no_mosque}<br><br>
+                                <a href="https://www.google.com/maps/search/cami/@${lat},${lon},16z" target="_blank" class="action-btn" style="margin: 0 auto; display: inline-flex;">
+                                    <span>🗺️</span> Google Maps'te Tam Liste Aç
+                                </a>
+                            </div>`;
                         return;
                     }
 
