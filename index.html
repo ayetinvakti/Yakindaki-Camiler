@@ -251,6 +251,24 @@
             background-color: var(--btn-hover);
             border-color: var(--accent-color);
         }
+
+        .map-frame-container {
+            width: 100%;
+            height: 420px;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            display: none;
+            position: relative;
+            background-color: var(--card-bg);
+            margin-top: 10px;
+        }
+
+        .map-frame-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
     </style>
 </head>
 <body>
@@ -281,6 +299,11 @@
     </div>
 
     <div class="mosque-list" id="mosqueListContainer"></div>
+
+    <!-- Sistem içi Google Haritalar Akıllı Görünümü -->
+    <div class="map-frame-container" id="mapFrameContainer">
+        <iframe id="googleMapFrame" src="" allowfullscreen="" loading="lazy"></iframe>
+    </div>
 </div>
 
 <script>
@@ -294,7 +317,7 @@
             map_btn: "Haritada (Google Maps) Aç",
             loc_error: "Konum alınamadı. Lütfen konum izinlerini kontrol edin.",
             loc_getting: "Konumunuz alınıyor ve camiler taranıyor...",
-            no_mosque: "Yakınınızda kayıtlı cami bulunamadı. Harita seçeneğini deneyebilirsiniz.",
+            no_mosque: "Yakınınızda açık kaynaklı kayıtlı cami bulunamadı. Google Haritalar üzerinden doğrudan konumunuzdaki tüm camileri görüntüleyebilirsiniz:",
             dir_btn: "Yol Tarifi"
         },
         en: {
@@ -306,7 +329,7 @@
             map_btn: "Open on Google Maps",
             loc_error: "Could not get location. Please check permissions.",
             loc_getting: "Getting your location and scanning mosques...",
-            no_mosque: "No registered mosques found nearby. You can try the map option.",
+            no_mosque: "No open-source registered mosques found nearby. You can view all mosques at your location directly via Google Maps:",
             dir_btn: "Directions"
         },
         ar: {
@@ -318,7 +341,7 @@
             map_btn: "فتح على خرائط جوجل",
             loc_error: "تعذر الحصول على الموقع. يرجى التحقق من الأذونات.",
             loc_getting: "جاري تحديد موقعك وفحص المساجد...",
-            no_mosque: "لم يتم العثور على مساجد مسجلة بالقرب منك. يمكنك تجربة خيار الخريطة.",
+            no_mosque: "لم يتم العثور على مساجد مسجلة مفتوحة المصدر بالقرب منك. يمكنك عرض جميع المساجد في موقعك مباشرة via خرائط جوجل:",
             dir_btn: "الاتجاهات"
         }
     };
@@ -386,7 +409,7 @@
         }
         navigator.geolocation.getCurrentPosition(
             (pos) => {
-                window.location.href = `https://www.google.com/maps/search/cami/@${pos.coords.latitude},${pos.coords.longitude},15z`;
+                window.location.href = `https://www.google.com/maps/search/cami/@${pos.coords.latitude},${pos.coords.longitude},16z`;
             },
             () => {
                 window.location.href = "https://www.google.com/maps/search/cami";
@@ -398,6 +421,8 @@
     function findNearbyMosquesInternal() {
         const statusEl = document.getElementById('statusText');
         const container = document.getElementById('mosqueListContainer');
+        const frameContainer = document.getElementById('mapFrameContainer');
+        const mapFrame = document.getElementById('googleMapFrame');
         
         if (!navigator.geolocation) {
             statusEl.textContent = t.loc_error;
@@ -406,6 +431,7 @@
 
         statusEl.textContent = t.loc_getting;
         container.innerHTML = '';
+        frameContainer.style.display = 'none';
 
         navigator.geolocation.getCurrentPosition(
             async (position) => {
@@ -413,7 +439,6 @@
                 const lon = position.coords.longitude;
                 
                 try {
-                    // Genişletilmiş ve her tür ibadethane/cami etiketini yakalayan sorgu (15 km çap)
                     const query = `[out:json][timeout:15];
                     (
                       node(around:15000,${lat},${lon})[amenity=place_of_worship];
@@ -444,7 +469,6 @@
                         const tags = item.tags || {};
                         const name = tags.name || tags['name:tr'] || tags['official_name'] || "";
                         
-                        // İsimde veya etiketlerde cami/mescit ibaresi geçiyorsa veya Müslüman ibadethanesiyse al
                         const nameLower = name.toLowerCase();
                         const isMosque = nameLower.includes('cami') || 
                                          nameLower.includes('mescit') || 
@@ -466,16 +490,16 @@
                     let mosques = Object.values(uniqueMosques);
                     mosques.sort((a, b) => a.dist - b.dist);
 
-                    // Eğer açık kaynak haritada o mahalle camileri hiç eklenmemişse, kullanıcı mağdur olmasın diye 
-                    // en üst üste Google Haritalar köprüsünü akıllı bir uyarı ile sunuyoruz.
+                    // Eğer açık kaynak haritada veri yoksa veya eksik kalırsa, sayfa içinde Google Haritalar iframe'ini tetikle
                     if (mosques.length === 0) {
                         container.innerHTML = `
-                            <div style="text-align:center; color:var(--text-muted); padding:20px; line-height: 1.6;">
-                                ${t.no_mosque}<br><br>
-                                <a href="https://www.google.com/maps/search/cami/@${lat},${lon},16z" target="_blank" class="action-btn" style="margin: 0 auto; display: inline-flex;">
-                                    <span>🗺️</span> Google Maps'te Tam Liste Aç
-                                </a>
+                            <div style="text-align:center; color:var(--text-muted); padding:15px; line-height: 1.6;">
+                                ${t.no_mosque}
                             </div>`;
+                        
+                        mapFrame.src = `https://maps.google.com/maps?q=cami&sll=${lat},${lon}&sspn=0.01,0.01&t=m&z=16&output=embed`;
+                        frameContainer.style.display = 'block';
+                        frameContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                         return;
                     }
 
