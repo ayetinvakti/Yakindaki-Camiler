@@ -224,7 +224,7 @@
             card_title: "Cami Bulucu",
             card_desc: "Bulunduğunuz konuma en yakın camileri harita üzerinde listeleyebilir, yol tarifi alarak kolayca ulaşabilirsiniz.",
             find_btn: "En Yakın Camileri Bul",
-            loc_error: "Konumunuza ulaşılamadı. Lütfen konum izinlerini kontrol edin.",
+            loc_error: "Konum alınamadı, harita açılıyor...",
             loc_getting: "Konumunuz alınıyor, haritaya yönlendiriliyorsunuz..."
         },
         en: {
@@ -233,7 +233,7 @@
             card_title: "Mosque Finder",
             card_desc: "Find the mosques closest to your location on the map and easily get directions.",
             find_btn: "Find Nearest Mosques",
-            loc_error: "Could not access your location. Please check permissions.",
+            loc_error: "Location denied, opening map...",
             loc_getting: "Getting your location, redirecting to map..."
         },
         ar: {
@@ -242,7 +242,7 @@
             card_title: "البحث عن المساجد",
             card_desc: "اعثر على أقرب المساجد إلى موقعك على الخريطة واحصل على الاتجاهات بسهولة.",
             find_btn: "ابحث عن أقرب مسجد",
-            loc_error: "تعذر الوصول إلى موقعك. يرجى التحقق من أذونات الموقع.",
+            loc_error: "تعذر الحصول على الموقع، يتم فتح الخريطة...",
             loc_getting: "جاري تحديد موقعك، يتم توجيهك إلى الخريطة..."
         }
     };
@@ -298,26 +298,27 @@
         const statusEl = document.getElementById('statusText');
         
         if (!navigator.geolocation) {
-            statusEl.textContent = t.loc_error;
+            window.location.href = "https://www.google.com/maps/search/cami";
             return;
         }
 
         statusEl.textContent = t.loc_getting;
 
+        // Zaman aşımı süresini kısa tutuyoruz ki kullanıcı Safari'de "İzin Ver" / "Engelle" penceresinde takılı kalmasın
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
-                statusEl.textContent = "";
-                
-                // Google Maps arama URL'si
-                const mapsUrl = `https://www.google.com/maps/search/cami/@${lat},${lon},15z`;
-                window.open(mapsUrl, '_blank');
+                window.location.href = `https://www.google.com/maps/search/cami/@${lat},${lon},15z`;
             },
             (error) => {
+                // Konum reddedilse veya hata verse bile kullanıcıyı doğrudan haritadaki cami arama sayfasına atıyoruz
                 statusEl.textContent = t.loc_error;
+                setTimeout(() => {
+                    window.location.href = "https://www.google.com/maps/search/cami";
+                }, 800);
             },
-            { timeout: 10000, enableHighAccuracy: true }
+            { timeout: 5000, enableHighAccuracy: false, maximumAge: 60000 }
         );
     }
 
