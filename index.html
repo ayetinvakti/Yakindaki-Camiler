@@ -159,6 +159,18 @@
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
         }
 
+        .action-btn.secondary {
+            background-color: var(--btn-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            box-shadow: none;
+        }
+
+        .action-btn.secondary:hover {
+            background-color: var(--btn-hover);
+            border-color: var(--accent-color);
+        }
+
         .action-btn:active {
             transform: scale(0.98);
         }
@@ -252,13 +264,17 @@
 
     <div class="control-card">
         <div style="font-size: 2.5rem;">🕌</div>
-        <div style="font-size: 1.15rem; font-weight: 700; color: var(--accent-color);" data-i18n="card_title">Dahili Cami Bulucu</div>
+        <div style="font-size: 1.15rem; font-weight: 700; color: var(--accent-color);" data-i18n="card_title">Cami Bulucu</div>
         <div style="font-size: 0.9rem; color: var(--text-muted);" data-i18n="card_desc">
-            Bulunduğunuz konumu tarayarak çevrenizdeki camileri anında listeleyin.
+            Çevrenizdeki camileri listeleyin veya harita üzerinde tek tıkla görüntüleyin.
         </div>
         
         <button class="action-btn" onclick="findNearbyMosquesInternal()">
             <span>📍</span> <span data-i18n="find_btn">Çevremdeki Camileri Listele</span>
+        </button>
+
+        <button class="action-btn secondary" onclick="openDirectMaps()">
+            <span>🗺️</span> <span data-i18n="map_btn">Haritada (Google Maps) Aç</span>
         </button>
         
         <div class="status-text" id="statusText"></div>
@@ -272,34 +288,37 @@
         tr: {
             page_title: "Yakındaki Camiler | Ayetin Vakti",
             app_title: "Yakındaki Camiler",
-            card_title: "Dahili Cami Bulucu",
-            card_desc: "Bulunduğunuz konumu tarayarak çevrenizdeki camileri anında listeleyin.",
+            card_title: "Cami Bulucu",
+            card_desc: "Çevrenizdeki camileri listeleyin veya harita üzerinde tek tıkla görüntüleyin.",
             find_btn: "Çevremdeki Camileri Listele",
+            map_btn: "Haritada (Google Maps) Aç",
             loc_error: "Konum alınamadı. Lütfen konum izinlerini kontrol edin.",
             loc_getting: "Konumunuz alınıyor ve camiler taranıyor...",
-            no_mosque: "Yakınınızda cami bulunamadı.",
+            no_mosque: "Yakınınızda kayıtlı cami bulunamadı. Harita seçeneğini deneyebilirsiniz.",
             dir_btn: "Yol Tarifi"
         },
         en: {
             page_title: "Nearby Mosques | Ayetin Vakti",
             app_title: "Nearby Mosques",
-            card_title: "Internal Mosque Finder",
-            card_desc: "Scan your location to instantly list mosques around you.",
+            card_title: "Mosque Finder",
+            card_desc: "List mosques around you or view them on the map with a single click.",
             find_btn: "List Mosques Around Me",
+            map_btn: "Open on Google Maps",
             loc_error: "Could not get location. Please check permissions.",
             loc_getting: "Getting your location and scanning mosques...",
-            no_mosque: "No mosques found nearby.",
+            no_mosque: "No registered mosques found nearby. You can try the map option.",
             dir_btn: "Directions"
         },
         ar: {
             page_title: "المساجد القريبة | آية الوقت",
             app_title: "المساجد القريبة",
-            card_title: "البحث الداخلي عن المساجد",
-            card_desc: "قم بمسح موقعك لسرد المساجد من حولكon فوراً.",
+            card_title: "البحث عن المساجد",
+            card_desc: "سرد المساجد من حولك أو عرضها على الخريطة بنقرة واحدة.",
             find_btn: "عرض المساجد القريبة مني",
+            map_btn: "فتح على خرائط جوجل",
             loc_error: "تعذر الحصول على الموقع. يرجى التحقق من الأذونات.",
             loc_getting: "جاري تحديد موقعك وفحص المساجد...",
-            no_mosque: "لم يتم العثور على مساجد قريبة.",
+            no_mosque: "لم يتم العثور على مساجد مسجلة بالقرب منك. يمكنك تجربة خيار الخريطة.",
             dir_btn: "الاتجاهات"
         }
     };
@@ -349,7 +368,7 @@
     }
 
     function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371; // Dünya yarıçapı (km)
+        const R = 6371;
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
         const a = 
@@ -357,7 +376,23 @@
             Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
             Math.sin(dLon/2) * Math.sin(dLon/2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c; // km cinsinden mesafe
+        return R * c;
+    }
+
+    function openDirectMaps() {
+        if (!navigator.geolocation) {
+            window.location.href = "https://www.google.com/maps/search/cami";
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                window.location.href = `https://www.google.com/maps/search/cami/@${pos.coords.latitude},${pos.coords.longitude},15z`;
+            },
+            () => {
+                window.location.href = "https://www.google.com/maps/search/cami";
+            },
+            { timeout: 5000, enableHighAccuracy: false }
+        );
     }
 
     function findNearbyMosquesInternal() {
@@ -378,8 +413,8 @@
                 const lon = position.coords.longitude;
                 
                 try {
-                    // OpenStreetMap Overpass API ile 3 km yarıçapındaki camileri çekiyoruz
-                    const query = `[out:json];node(around:3000,${lat},${lon})[amenity=place_of_worship][religion=muslim];out;`;
+                    // Yarıçapı 5 km'ye çıkardık ki daha geniş bir alandaki camiler de listelensin
+                    const query = `[out:json];node(around:5000,${lat},${lon})[amenity=place_of_worship][religion=muslim];out;`;
                     const response = await fetch('https://overpass-api.de/api/interpreter', {
                         method: 'POST',
                         body: query
@@ -389,15 +424,14 @@
                     statusEl.textContent = "";
 
                     if (!data.elements || data.elements.length === 0) {
-                        container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:20px;">${t.no_mosque}</div>`;
+                        container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:20px; line-height: 1.5;">${t.no_mosque}</div>`;
                         return;
                     }
 
-                    // Camileri mesafelerine göre hesaplayıp sıralıyoruz
                     let mosques = data.elements.map(item => {
                         const mLat = item.lat;
                         const mLon = item.lon;
-                        const name = (item.tags && (item.tags.name || item.tags['name:tr'])) || "İsimsiz Cami";
+                        const name = (item.tags && (item.tags.name || item.tags['name:tr'] || item.tags['official_name'])) || "Cami";
                         const dist = calculateDistance(lat, lon, mLat, mLon);
                         return { name, dist, lat: mLat, lon: mLon };
                     });
