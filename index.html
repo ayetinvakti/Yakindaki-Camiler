@@ -413,8 +413,18 @@
                 const lon = position.coords.longitude;
                 
                 try {
-                    // Yarıçapı 5 km'ye çıkardık ki daha geniş bir alandaki camiler de listelensin
-                    const query = `[out:json];node(around:5000,${lat},${lon})[amenity=place_of_worship][religion=muslim];out;`;
+                    // Yarıçapı 10 km'ye çıkarıp hem node hem de way/relation merkezlerini tarayacak daha kapsamlı bir sorgu kurduk
+                    const query = `[out:json][timeout:15];
+                    (
+                      node(around:10000,${lat},${lon})[amenity=place_of_worship];
+                      way(around:10000,${lat},${lon})[amenity=place_of_worship];
+                      node(around:10000,${lat},${lon})[religion=muslim];
+                      way(around:10000,${lat},${lon})[religion=muslim];
+                    );
+                    out body;
+                    >;
+                    out skel qt;`;
+
                     const response = await fetch('https://overpass-api.de/api/interpreter', {
                         method: 'POST',
                         body: query
@@ -423,20 +433,43 @@
                     const data = await response.json();
                     statusEl.textContent = "";
 
-                    if (!data.elements || data.elements.length === 0) {
+                    let elements = data.elements ? data.elements.filter(item => item.lat && item.lon) : [];
+
+                    if (elements.length === 0) {
                         container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:20px; line-height: 1.5;">${t.no_mosque}</div>`;
                         return;
                     }
 
-                    let mosques = data.elements.map(item => {
+                    // Benzersiz camileri toplamak için ID süzgeci
+                    let uniqueMosques = {};
+                    elements.forEach(item => {
                         const mLat = item.lat;
                         const mLon = item.lon;
-                        const name = (item.tags && (item.tags.name || item.tags['name:tr'] || item.tags['official_name'])) || "Cami";
-                        const dist = calculateDistance(lat, lon, mLat, mLon);
-                        return { name, dist, lat: mLat, lon: mLon };
+                        const name = (item.tags && (item.tags.name || item.tags['name:tr'] || item.tags['official_name'])) || "";
+                        
+                        // Sadece cami veya ibadethane olanları filtrele
+                        const isMosque = name.toLowerCase().includes('cami') || 
+                                         name.toLowerCase().includes('mescit') || 
+                                         (item.tags && (item.tags.religion === 'muslim' || item.tags.amenity === 'place_of_worship'));
+
+                        if (isMosque) {
+                            const key = `${mLat.toFixed(4)},${mLon.toFixed(4)}`;
+                            const finalName = name || "Cami / Mescit";
+                            const dist = calculateDistance(lat, lon, mLat, mLon);
+                            
+                            if (!uniqueMosques[key] || uniqueMosques[key].name === "Cami / Mescit") {
+                                uniqueMosques[key] = { name: finalName, dist, lat: mLat, lon: mLon };
+                            }
+                        }
                     });
 
+                    let mosques = Object.values(uniqueMosques);
                     mosques.sort((a, b) => a.dist - b.dist);
+
+                    if (mosques.length === 0) {
+                        container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:20px; line-height: 1.5;">${t.no_mosque}</div>`;
+                        return;
+                    }
 
                     let html = '';
                     mosques.forEach(m => {
