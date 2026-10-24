@@ -10,7 +10,6 @@
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         if (savedTheme === 'light' || (!savedTheme && !systemPrefersDark)) {
             document.documentElement.classList.add('light-mode');
-            document.body && document.body.classList.add('light-mode');
         }
 
         const savedAccent = localStorage.getItem('custom_accent');
@@ -25,15 +24,13 @@
         if (savedText) document.documentElement.style.setProperty('--text-color', savedText);
 
         const currentLang = localStorage.getItem('user_lang') || 'tr';
-        if (currentLang === 'ar') {
-            document.documentElement.setAttribute('dir', 'rtl');
-        } else {
-            document.documentElement.setAttribute('dir', 'ltr');
-        }
+        document.documentElement.setAttribute('lang', currentLang);
+        document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
     </script>
 
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- DÜZELTME: Yakınlaştırmayı engelleyen maximum-scale / user-scalable=no kaldırıldı -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="page_title">Yakındaki Camiler | Ayetin Vakti</title>
     
     <style>
@@ -48,7 +45,7 @@
             --btn-hover: rgba(255, 255, 255, 0.1);
         }
 
-        html.light-mode, body.light-mode {
+        html.light-mode {
             --bg-color: #f8fafc;
             --card-bg: #ffffff;
             --accent-color: #059669;
@@ -80,204 +77,83 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        .container {
-            width: 100%;
-            max-width: 700px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
+        .container { width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 16px; }
 
         .navbar {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
+            width: 100%; display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px;
         }
+        [dir="rtl"] .navbar { flex-direction: row-reverse; }
 
         .home-btn, .theme-icon-btn {
-            background-color: var(--btn-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            font-size: 1.1rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
+            background-color: var(--btn-bg); border: 1px solid var(--border-color); color: var(--text-color);
+            width: 38px; height: 38px; border-radius: 50%; font-size: 1.1rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; text-decoration: none;
         }
+        .home-btn:hover, .theme-icon-btn:hover { background-color: var(--btn-hover); }
 
-        .home-btn:hover, .theme-icon-btn:hover {
-            background-color: var(--btn-hover);
-        }
-
-        .app-title {
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: var(--text-color);
-            text-align: center;
-            flex: 1;
-        }
+        .app-title { font-size: 1.05rem; font-weight: 700; color: var(--text-color); text-align: center; flex: 1; }
 
         .control-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            gap: 14px;
+            background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; padding: 20px;
+            display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
 
         .action-btn {
-            width: 100%;
-            max-width: 320px;
-            padding: 14px 20px;
-            border-radius: 14px;
-            background-color: var(--accent-color);
-            color: #ffffff;
-            border: none;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s ease, transform 0.1s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            text-decoration: none;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+            width: 100%; max-width: 320px; padding: 14px 20px; border-radius: 14px; background-color: var(--accent-color);
+            color: #ffffff; border: none; font-size: 1rem; font-weight: 600; cursor: pointer;
+            transition: opacity 0.2s ease, transform 0.1s ease; display: flex; align-items: center; justify-content: center;
+            gap: 8px; text-decoration: none; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
         }
+        .action-btn.secondary { background-color: var(--btn-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: none; }
+        .action-btn.secondary:hover { background-color: var(--btn-hover); border-color: var(--accent-color); }
+        .action-btn:active { transform: scale(0.98); }
+        .action-btn:hover { opacity: 0.9; }
+        .action-btn:disabled { opacity: .55; cursor: default; }
 
-        .action-btn.secondary {
-            background-color: var(--btn-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            box-shadow: none;
-        }
+        .status-text { font-size: 0.85rem; color: var(--text-muted); min-height: 20px; line-height: 1.5; }
+        .status-text.error { color: #ef4444; }
 
-        .action-btn.secondary:hover {
-            background-color: var(--btn-hover);
-            border-color: var(--accent-color);
-        }
-
-        .action-btn:active {
-            transform: scale(0.98);
-        }
-
-        .action-btn:hover {
-            opacity: 0.9;
-        }
-
-        .status-text {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            min-height: 20px;
-        }
-
-        .mosque-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
+        .mosque-list { display: flex; flex-direction: column; gap: 12px; }
 
         .mosque-item {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            transition: border-color 0.2s ease;
+            background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px;
+            display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: border-color 0.2s ease;
         }
+        [dir="rtl"] .mosque-item { flex-direction: row-reverse; }
+        .mosque-item:hover { border-color: var(--accent-color); }
 
-        .mosque-item:hover {
-            border-color: var(--accent-color);
-        }
+        .mosque-info { display: flex; flex-direction: column; gap: 4px; text-align: left; flex: 1; min-width: 0; }
+        [dir="rtl"] .mosque-info { text-align: right; }
 
-        .mosque-info {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            text-align: left;
-            flex: 1;
-        }
-
-        [dir="rtl"] .mosque-info {
-            text-align: right;
-        }
-
-        .mosque-name {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--text-color);
-        }
-
-        .mosque-distance {
-            font-size: 0.85rem;
-            color: var(--accent-color);
-            font-weight: 600;
-        }
+        .mosque-name { font-size: 1rem; font-weight: 700; color: var(--text-color); overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+        .mosque-distance { font-size: 0.85rem; color: var(--accent-color); font-weight: 600; }
 
         .direction-btn {
-            background-color: var(--btn-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 10px 14px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            white-space: nowrap;
+            background-color: var(--btn-bg); border: 1px solid var(--border-color); color: var(--text-color);
+            padding: 10px 14px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            text-decoration: none; display: flex; align-items: center; gap: 5px; white-space: nowrap;
         }
+        .direction-btn:hover { background-color: var(--btn-hover); border-color: var(--accent-color); }
 
-        .direction-btn:hover {
-            background-color: var(--btn-hover);
-            border-color: var(--accent-color);
-        }
+        .list-note { font-size: 0.75rem; color: var(--text-muted); text-align: center; }
+        .more-btn { align-self: center; max-width: 320px; }
 
         .map-frame-container {
-            width: 100%;
-            height: 420px;
-            border-radius: 20px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            display: none;
-            position: relative;
-            background-color: var(--card-bg);
-            margin-top: 10px;
+            width: 100%; height: 420px; border-radius: 20px; overflow: hidden; border: 1px solid var(--border-color);
+            display: none; position: relative; background-color: var(--card-bg); margin-top: 10px;
         }
-
-        .map-frame-container iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
+        .map-frame-container iframe { width: 100%; height: 100%; border: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header class="navbar">
-        <a href="../" class="home-btn" title="Ana Sayfa">←</a>
+        <a href="../" class="home-btn" title="Ana Sayfa" aria-label="Ana Sayfa" data-i18n-title="home_title">←</a>
         <div class="app-title" data-i18n="app_title">Yakındaki Camiler</div>
-        <button class="theme-icon-btn" onclick="toggleTheme()" id="theme-btn" title="Tema Değiştir">☀️</button>
+        <button class="theme-icon-btn" onclick="toggleTheme()" id="theme-btn" title="Tema Değiştir" aria-label="Tema Değiştir" data-i18n-title="theme_title">☀️</button>
     </header>
 
     <div class="control-card">
@@ -287,7 +163,7 @@
             Çevrenizdeki camileri listeleyin veya harita üzerinde tek tıkla görüntüleyin.
         </div>
         
-        <button class="action-btn" onclick="findNearbyMosquesInternal()">
+        <button class="action-btn" id="findBtn" onclick="findNearbyMosques()">
             <span>📍</span> <span data-i18n="find_btn">Çevremdeki Camileri Listele</span>
         </button>
 
@@ -295,243 +171,282 @@
             <span>🗺️</span> <span data-i18n="map_btn">Haritada (Google Maps) Aç</span>
         </button>
         
-        <div class="status-text" id="statusText"></div>
+        <div class="status-text" id="statusText" aria-live="polite"></div>
     </div>
 
     <div class="mosque-list" id="mosqueListContainer"></div>
 
-    <!-- Sistem içi Google Haritalar Akıllı Görünümü -->
     <div class="map-frame-container" id="mapFrameContainer">
-        <iframe id="googleMapFrame" src="" allowfullscreen="" loading="lazy"></iframe>
+        <iframe id="googleMapFrame" src="" allowfullscreen="" loading="lazy" title="Google Maps"></iframe>
     </div>
 </div>
 
 <script>
     const translations = {
         tr: {
-            page_title: "Yakındaki Camiler | Ayetin Vakti",
-            app_title: "Yakındaki Camiler",
-            card_title: "Cami Bulucu",
+            page_title: "Yakındaki Camiler | Ayetin Vakti", home_title: "Ana Sayfa", theme_title: "Tema Değiştir",
+            app_title: "Yakındaki Camiler", card_title: "Cami Bulucu",
             card_desc: "Çevrenizdeki camileri listeleyin veya harita üzerinde tek tıkla görüntüleyin.",
-            find_btn: "Çevremdeki Camileri Listele",
-            map_btn: "Haritada (Google Maps) Aç",
+            find_btn: "Çevremdeki Camileri Listele", map_btn: "Haritada (Google Maps) Aç",
             loc_error: "Konum alınamadı. Lütfen konum izinlerini kontrol edin.",
-            loc_getting: "Konumunuz alınıyor ve camiler taranıyor...",
-            no_mosque: "Yakınınızda açık kaynaklı kayıtlı cami bulunamadı. Google Haritalar üzerinden doğrudan konumunuzdaki tüm camileri görüntüleyebilirsiniz:",
-            dir_btn: "Yol Tarifi"
+            net_error: "Cami verisi şu an alınamadı (sunucu meşgul olabilir). Lütfen biraz sonra tekrar deneyin ya da haritada açın.",
+            loc_getting: "Konumunuz alınıyor...",
+            scanning: "Camiler taranıyor (yarıçap: {km} km)...",
+            saved_city: "Konum izni verilmedi; kayıtlı şehrin merkezine göre listeleniyor:",
+            found: "{n} cami bulundu (en yakından başlayarak)",
+            no_mosque: "Yakınınızda kayıtlı cami bulunamadı. Google Haritalar üzerinden konumunuzdaki camileri görüntüleyebilirsiniz:",
+            dist_note: "Mesafeler kuş uçuşudur; veriler OpenStreetMap kaynaklıdır, eksik olabilir.",
+            more_btn: "Daha fazla göster", dir_btn: "Yol Tarifi", default_name: "Cami / Mescit"
         },
         en: {
-            page_title: "Nearby Mosques | Ayetin Vakti",
-            app_title: "Nearby Mosques",
-            card_title: "Mosque Finder",
+            page_title: "Nearby Mosques | Ayetin Vakti", home_title: "Home", theme_title: "Toggle Theme",
+            app_title: "Nearby Mosques", card_title: "Mosque Finder",
             card_desc: "List mosques around you or view them on the map with a single click.",
-            find_btn: "List Mosques Around Me",
-            map_btn: "Open on Google Maps",
+            find_btn: "List Mosques Around Me", map_btn: "Open on Google Maps",
             loc_error: "Could not get location. Please check permissions.",
-            loc_getting: "Getting your location and scanning mosques...",
-            no_mosque: "No open-source registered mosques found nearby. You can view all mosques at your location directly via Google Maps:",
-            dir_btn: "Directions"
+            net_error: "Mosque data could not be loaded right now (the server may be busy). Please try again later or open the map.",
+            loc_getting: "Getting your location...",
+            scanning: "Scanning for mosques (radius: {km} km)...",
+            saved_city: "Location permission denied; listing around your saved city center:",
+            found: "{n} mosques found (nearest first)",
+            no_mosque: "No registered mosques found nearby. You can view mosques at your location on Google Maps:",
+            dist_note: "Distances are straight-line; data comes from OpenStreetMap and may be incomplete.",
+            more_btn: "Show more", dir_btn: "Directions", default_name: "Mosque"
         },
         ar: {
-            page_title: "المساجد القريبة | آية الوقت",
-            app_title: "المساجد القريبة",
-            card_title: "البحث عن المساجد",
+            page_title: "المساجد القريبة | آية الوقت", home_title: "الرئيسية", theme_title: "تغيير المظهر",
+            app_title: "المساجد القريبة", card_title: "البحث عن المساجد",
             card_desc: "سرد المساجد من حولك أو عرضها على الخريطة بنقرة واحدة.",
-            find_btn: "عرض المساجد القريبة مني",
-            map_btn: "فتح على خرائط جوجل",
+            find_btn: "عرض المساجد القريبة مني", map_btn: "فتح على خرائط جوجل",
             loc_error: "تعذر الحصول على الموقع. يرجى التحقق من الأذونات.",
-            loc_getting: "جاري تحديد موقعك وفحص المساجد...",
-            no_mosque: "لم يتم العثور على مساجد مسجلة مفتوحة المصدر بالقرب منك. يمكنك عرض جميع المساجد في موقعك مباشرة via خرائط جوجل:",
-            dir_btn: "الاتجاهات"
+            net_error: "تعذر تحميل بيانات المساجد الآن (قد يكون الخادم مشغولاً). حاول لاحقاً أو افتح الخريطة.",
+            loc_getting: "جاري تحديد موقعك...",
+            scanning: "جاري البحث عن المساجد (نصف القطر: {km} كم)...",
+            saved_city: "لم يُمنح إذن الموقع؛ يتم العرض حول مركز المدينة المحفوظة:",
+            found: "تم العثور على {n} مسجد (الأقرب أولاً)",
+            no_mosque: "لم يتم العثور على مساجد مسجلة بالقرب منك. يمكنك عرض المساجد في موقعك على خرائط جوجل:",
+            dist_note: "المسافات بخط مستقيم؛ البيانات من OpenStreetMap وقد تكون ناقصة.",
+            more_btn: "عرض المزيد", dir_btn: "الاتجاهات", default_name: "مسجد"
         }
     };
 
-    const activeLang = localStorage.getItem('user_lang') || 'tr';
-    const t = translations[activeLang] || translations['tr'];
+    const activeLang = translations[localStorage.getItem('user_lang')] ? localStorage.getItem('user_lang') : 'tr';
+    const t = translations[activeLang];
+    const PAGE_SIZE = 25;
+    const RADII = [1500, 4000, 10000, 20000];     // metre; yeterli sonuç bulununca durur
+    const MIN_RESULTS = 8;
+    const ENDPOINTS = [
+        'https://overpass-api.de/api/interpreter',
+        'https://overpass.kumi.systems/api/interpreter',
+        'https://overpass.private.coffee/api/interpreter'
+    ];
 
-    function updateThemeButton(isLight) {
+    // <PURE>
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371, rad = Math.PI / 180;
+        const dLat = (lat2 - lat1) * rad, dLon = (lon2 - lon1) * rad;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLon / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function buildQuery(lat, lon, radius) {
+        // DÜZELTME: nwr + "out center" ile bina çokgenleri (way/relation) de gelir; önceki sorgu bunları kaçırıyordu
+        return `[out:json][timeout:25];
+(
+  nwr(around:${radius},${lat},${lon})["amenity"="place_of_worship"]["religion"="muslim"];
+  nwr(around:${radius},${lat},${lon})["building"="mosque"];
+  nwr(around:${radius},${lat},${lon})["amenity"="mosque"];
+);
+out center tags;`;
+    }
+
+    // OSM öğelerini cami listesine çevirir: filtre, mesafe, tekilleştirme, sıralama
+    function parseMosques(elements, lat, lon, lang, defaultName) {
+        const list = [];
+        (elements || []).forEach(item => {
+            const tags = item.tags || {};
+            // DÜZELTME: Başka dinlerin ibadethaneleri (kilise, sinagog vb.) elenir
+            if (tags.religion && tags.religion !== 'muslim') return;
+            if (tags.amenity === 'place_of_worship' && tags.religion !== 'muslim' && tags.building !== 'mosque') return;
+            const mLat = item.lat !== undefined ? item.lat : (item.center && item.center.lat);
+            const mLon = item.lon !== undefined ? item.lon : (item.center && item.center.lon);
+            if (typeof mLat !== 'number' || typeof mLon !== 'number') return;
+            const name = (tags['name:' + lang] || tags.name || tags['name:tr'] || tags.official_name || '').trim();
+            list.push({ name: name || defaultName, hasName: !!name, dist: calculateDistance(lat, lon, mLat, mLon), lat: mLat, lon: mLon });
+        });
+        list.sort((a, b) => a.dist - b.dist);
+        // Aynı caminin düğüm + bina kaydı çift görünmesin: aynı ad 80 m içinde ya da herhangi bir kayıt 12 m içinde ise tekrar sayılır
+        const out = [];
+        list.forEach(m => {
+            const dup = out.some(k => {
+                const d = calculateDistance(k.lat, k.lon, m.lat, m.lon) * 1000;
+                return d < 12 || (d < 80 && k.name.toLowerCase() === m.name.toLowerCase());
+            });
+            if (!dup) out.push(m);
+        });
+        return out;
+    }
+    // </PURE>
+
+    // ===================== TEMA =====================
+    function updateThemeButton() {
         const btn = document.getElementById('theme-btn');
-        if (btn) btn.textContent = isLight ? '☀️' : '🌙';
+        if (btn) btn.textContent = document.documentElement.classList.contains('light-mode') ? '☀️' : '🌙';
     }
-
-    function initTheme() {
-        const savedTheme = localStorage.getItem('theme');
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const isLight = (savedTheme === 'light') || (!savedTheme && !systemPrefersDark);
-        applyTheme(isLight);
-    }
-
     function toggleTheme() {
-        const isLight = document.documentElement.classList.contains('light-mode');
-        applyTheme(!isLight);
-    }
-
-    function applyTheme(isLight) {
-        if (isLight) {
-            document.documentElement.classList.add('light-mode');
-            document.body.classList.add('light-mode');
-            localStorage.setItem('theme', 'light');
-        } else {
-            document.documentElement.classList.remove('light-mode');
-            document.body.classList.remove('light-mode');
-            localStorage.setItem('theme', 'dark');
-        }
-        updateThemeButton(isLight);
+        const isLight = document.documentElement.classList.toggle('light-mode');
+        localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        updateThemeButton();
     }
 
     function init() {
-        initTheme();
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
-            if (t[key]) {
-                if (el.tagName === 'TITLE') document.title = t[key];
-                else el.textContent = t[key];
-            }
+            if (t[key] && el.tagName !== 'TITLE') el.textContent = t[key];
+        });
+        document.querySelectorAll('[data-i18n-title]').forEach(el => {
+            const key = el.getAttribute('data-i18n-title');
+            if (t[key]) { el.title = t[key]; el.setAttribute('aria-label', t[key]); }
+        });
+        document.title = t.page_title;
+        updateThemeButton();
+    }
+
+    // ===================== KONUM =====================
+    function getPosition() {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) return reject(new Error('unsupported'));
+            navigator.geolocation.getCurrentPosition(
+                p => resolve({ lat: p.coords.latitude, lon: p.coords.longitude }),
+                reject,
+                { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 }
+            );
         });
     }
 
-    function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371;
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = 
-            Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
+    // Konum izni yoksa kayıtlı şehrin koordinatları (Aladhan meta) kullanılır
+    async function savedCityPosition() {
+        const saved = localStorage.getItem('user_city');
+        if (!saved) return null;
+        const map = { 'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u', 'Ç': 'C', 'Ğ': 'G', 'İ': 'I', 'Ö': 'O', 'Ş': 'S', 'Ü': 'U' };
+        const ascii = saved.replace(/[çğıöşüÇĞİÖŞÜ]/g, ch => map[ch]);
+        try {
+            const res = await fetch(`https://api.aladhan.com/v1/timingsByCity?city=${encodeURIComponent(ascii)}&country=Turkey&method=13`);
+            if (!res.ok) return null;
+            const j = await res.json();
+            const lat = parseFloat(j.data.meta.latitude), lon = parseFloat(j.data.meta.longitude);
+            return (isNaN(lat) || isNaN(lon)) ? null : { lat, lon, city: saved };
+        } catch (e) { return null; }
     }
 
+    // ===================== HARİTADA AÇ =====================
+    // DÜZELTME: Uygulamadan çıkmak yerine yeni sekmede açılır; konum alınamazsa genel aramaya düşer
     function openDirectMaps() {
-        if (!navigator.geolocation) {
-            window.location.href = "https://www.google.com/maps/search/cami";
-            return;
-        }
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                window.location.href = `https://www.google.com/maps/search/cami/@${pos.coords.latitude},${pos.coords.longitude},16z`;
-            },
-            () => {
-                window.location.href = "https://www.google.com/maps/search/cami";
-            },
-            { timeout: 5000, enableHighAccuracy: false }
-        );
+        const w = window.open('', '_blank');
+        const go = url => { if (w) { w.location = url; } else { window.location.href = url; } };
+        getPosition()
+            .then(p => go(`https://www.google.com/maps/search/${encodeURIComponent(activeLang === 'ar' ? 'مسجد' : (activeLang === 'en' ? 'mosque' : 'cami'))}/@${p.lat},${p.lon},16z`))
+            .catch(() => go('https://www.google.com/maps/search/cami'));
     }
 
-    function findNearbyMosquesInternal() {
-        const statusEl = document.getElementById('statusText');
+    // ===================== CAMİ ARAMA =====================
+    async function overpass(query) {
+        let lastErr = null;
+        for (const url of ENDPOINTS) {
+            const ctrl = new AbortController();
+            const to = setTimeout(() => ctrl.abort(), 25000);
+            try {
+                const res = await fetch(url, {
+                    method: 'POST', signal: ctrl.signal,
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                    body: 'data=' + encodeURIComponent(query)
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                if (!data || !Array.isArray(data.elements)) throw new Error('Geçersiz yanıt');
+                return data.elements;
+            } catch (e) { lastErr = e; }
+            finally { clearTimeout(to); }
+        }
+        throw lastErr || new Error('Overpass erişilemedi');
+    }
+
+    let currentList = [], shown = 0;
+
+    function setStatus(text, isError) {
+        const el = document.getElementById('statusText');
+        el.textContent = text; el.classList.toggle('error', !!isError);
+    }
+
+    function renderMore() {
+        const container = document.getElementById('mosqueListContainer');
+        const old = container.querySelector('.more-btn'); if (old) old.remove();
+        const slice = currentList.slice(shown, shown + PAGE_SIZE);
+        slice.forEach(m => {
+            const item = document.createElement('div'); item.className = 'mosque-item';
+            const info = document.createElement('div'); info.className = 'mosque-info';
+            const name = document.createElement('div'); name.className = 'mosque-name'; name.textContent = '🕌 ' + m.name;   // DÜZELTME: textContent (HTML enjeksiyonu yok)
+            const dist = document.createElement('div'); dist.className = 'mosque-distance';
+            dist.textContent = m.dist < 1 ? `${Math.round(m.dist * 1000)} m` : `${m.dist.toFixed(1)} km`;
+            info.append(name, dist);
+            const a = document.createElement('a'); a.className = 'direction-btn'; a.target = '_blank'; a.rel = 'noopener';
+            a.href = `https://www.google.com/maps/dir/?api=1&destination=${m.lat},${m.lon}`;
+            a.textContent = '🧭 ' + t.dir_btn;
+            item.append(info, a); container.appendChild(item);
+        });
+        shown += slice.length;
+        if (shown < currentList.length) {
+            const btn = document.createElement('button'); btn.className = 'action-btn secondary more-btn'; btn.textContent = t.more_btn;
+            btn.onclick = renderMore; container.appendChild(btn);
+        }
+    }
+
+    function showNoResult(pos) {
         const container = document.getElementById('mosqueListContainer');
         const frameContainer = document.getElementById('mapFrameContainer');
-        const mapFrame = document.getElementById('googleMapFrame');
-        
-        if (!navigator.geolocation) {
-            statusEl.textContent = t.loc_error;
-            return;
-        }
-
-        statusEl.textContent = t.loc_getting;
         container.innerHTML = '';
-        frameContainer.style.display = 'none';
+        const msg = document.createElement('div');
+        msg.style.cssText = 'text-align:center; color:var(--text-muted); padding:15px; line-height:1.6;';
+        msg.textContent = t.no_mosque; container.appendChild(msg);
+        document.getElementById('googleMapFrame').src = `https://maps.google.com/maps?q=cami&sll=${pos.lat},${pos.lon}&sspn=0.01,0.01&t=m&z=16&output=embed`;
+        frameContainer.style.display = 'block';
+    }
 
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
-                
-                try {
-                    const query = `[out:json][timeout:15];
-                    (
-                      node(around:15000,${lat},${lon})[amenity=place_of_worship];
-                      way(around:15000,${lat},${lon})[amenity=place_of_worship];
-                      node(around:15000,${lat},${lon})[religion=muslim];
-                      way(around:15000,${lat},${lon})[religion=muslim];
-                      node(around:15000,${lat},${lon})["building"="mosque"];
-                      way(around:15000,${lat},${lon})["building"="mosque"];
-                    );
-                    out body;
-                    >;
-                    out skel qt;`;
+    async function findNearbyMosques() {
+        const btn = document.getElementById('findBtn');
+        const container = document.getElementById('mosqueListContainer');
+        document.getElementById('mapFrameContainer').style.display = 'none';
+        container.innerHTML = ''; currentList = []; shown = 0;
+        btn.disabled = true;
+        try {
+            setStatus(t.loc_getting, false);
+            let pos = null, note = '';
+            try { pos = await getPosition(); }
+            catch (e) {
+                const fb = await savedCityPosition();
+                if (fb) { pos = fb; note = `${t.saved_city} ${fb.city}`; }
+            }
+            if (!pos) { setStatus(t.loc_error, true); return; }
 
-                    const response = await fetch('https://overpass-api.de/api/interpreter', {
-                        method: 'POST',
-                        body: query
-                    });
-                    
-                    const data = await response.json();
-                    statusEl.textContent = "";
+            // Sonuç yetersizse yarıçap kademeli genişler (1.5 → 4 → 10 → 20 km)
+            let mosques = [];
+            for (const r of RADII) {
+                setStatus(t.scanning.replace('{km}', (r / 1000).toString().replace('.', activeLang === 'tr' ? ',' : '.')), false);
+                const elements = await overpass(buildQuery(pos.lat, pos.lon, r));
+                mosques = parseMosques(elements, pos.lat, pos.lon, activeLang, t.default_name);
+                if (mosques.length >= MIN_RESULTS) break;
+            }
 
-                    let elements = data.elements ? data.elements.filter(item => item.lat && item.lon) : [];
-
-                    let uniqueMosques = {};
-                    elements.forEach(item => {
-                        const mLat = item.lat;
-                        const mLon = item.lon;
-                        const tags = item.tags || {};
-                        const name = tags.name || tags['name:tr'] || tags['official_name'] || "";
-                        
-                        const nameLower = name.toLowerCase();
-                        const isMosque = nameLower.includes('cami') || 
-                                         nameLower.includes('mescit') || 
-                                         tags.religion === 'muslim' || 
-                                         tags.amenity === 'place_of_worship' ||
-                                         tags.building === 'mosque';
-
-                        if (isMosque) {
-                            const key = `${mLat.toFixed(4)},${mLon.toFixed(4)}`;
-                            const finalName = name || "Cami / Mescit";
-                            const dist = calculateDistance(lat, lon, mLat, mLon);
-                            
-                            if (!uniqueMosques[key] || uniqueMosques[key].name === "Cami / Mescit") {
-                                uniqueMosques[key] = { name: finalName, dist, lat: mLat, lon: mLon };
-                            }
-                        }
-                    });
-
-                    let mosques = Object.values(uniqueMosques);
-                    mosques.sort((a, b) => a.dist - b.dist);
-
-                    // Eğer açık kaynak haritada veri yoksa veya eksik kalırsa, sayfa içinde Google Haritalar iframe'ini tetikle
-                    if (mosques.length === 0) {
-                        container.innerHTML = `
-                            <div style="text-align:center; color:var(--text-muted); padding:15px; line-height: 1.6;">
-                                ${t.no_mosque}
-                            </div>`;
-                        
-                        mapFrame.src = `https://maps.google.com/maps?q=cami&sll=${lat},${lon}&sspn=0.01,0.01&t=m&z=16&output=embed`;
-                        frameContainer.style.display = 'block';
-                        frameContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                        return;
-                    }
-
-                    let html = '';
-                    mosques.forEach(m => {
-                        const distFormatted = m.dist < 1 ? `${Math.round(m.dist * 1000)} m` : `${m.dist.toFixed(1)} km`;
-                        const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${m.lat},${m.lon}`;
-
-                        html += `
-                            <div class="mosque-item">
-                                <div class="mosque-info">
-                                    <div class="mosque-name">🕌 ${m.name}</div>
-                                    <div class="mosque-distance">${distFormatted}</div>
-                                </div>
-                                <a href="${mapsUrl}" target="_blank" class="direction-btn">
-                                    <span>🧭</span> ${t.dir_btn}
-                                </a>
-                            </div>
-                        `;
-                    });
-
-                    container.innerHTML = html;
-
-                } catch (err) {
-                    statusEl.textContent = t.loc_error;
-                }
-            },
-            (error) => {
-                statusEl.textContent = t.loc_error;
-            },
-            { timeout: 10000, enableHighAccuracy: true }
-        );
+            if (mosques.length === 0) { setStatus(note, false); showNoResult(pos); return; }
+            currentList = mosques;
+            setStatus((note ? note + '\n' : '') + t.found.replace('{n}', mosques.length) + '\n' + t.dist_note, false);
+            renderMore();
+        } catch (err) {
+            console.error('Cami arama hatası:', err);
+            setStatus(t.net_error, true);
+        } finally {
+            btn.disabled = false;
+        }
     }
 
     document.addEventListener('DOMContentLoaded', init);
