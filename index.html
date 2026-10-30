@@ -304,12 +304,14 @@
     const activeLang = translations[localStorage.getItem('user_lang')] ? localStorage.getItem('user_lang') : 'tr';
     const t = translations[activeLang];
     const PAGE_SIZE = 25;
-    const RADII = [1500, 4000, 10000, 20000];     // metre; yeterli sonuç bulununca durur
+    const RADII = [1500, 4000, 10000, 15000];     // metre; yeterli sonuç bulununca durur
     const MIN_RESULTS = 8;
     const ENDPOINTS = [
         'https://overpass-api.de/api/interpreter',
-        'https://overpass.kumi.systems/api/interpreter',
-        'https://overpass.private.coffee/api/interpreter'
+        'https://overpass.private.coffee/api/interpreter',
+        'https://overpass.openstreetmap.fr/api/interpreter',
+        'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+        'https://overpass.kumi.systems/api/interpreter'
     ];
 
     // <PURE>
@@ -322,7 +324,7 @@
 
     function buildQuery(lat, lon, radius) {
         // DÜZELTME: nwr + "out center" ile bina çokgenleri (way/relation) de gelir; önceki sorgu bunları kaçırıyordu
-        return `[out:json][timeout:25];
+        return `[out:json][timeout:20];
 (
   nwr(around:${radius},${lat},${lon})["amenity"="place_of_worship"]["religion"="muslim"];
   nwr(around:${radius},${lat},${lon})["building"="mosque"];
@@ -431,21 +433,27 @@ out center tags;`;
     // ===================== CAMİ ARAMA =====================
     async function overpass(query) {
         let lastErr = null;
-        for (const url of ENDPOINTS) {
-            const ctrl = new AbortController();
-            const to = setTimeout(() => ctrl.abort(), 25000);
-            try {
-                const res = await fetch(url, {
-                    method: 'POST', signal: ctrl.signal,
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-                    body: 'data=' + encodeURIComponent(query)
-                });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                const data = await res.json();
-                if (!data || !Array.isArray(data.elements)) throw new Error('Geçersiz yanıt');
-                return data.elements;
-            } catch (e) { lastErr = e; }
-            finally { clearTimeout(to); }
+        // Tüm sunucular başarısız olursa kısa beklemeyle bir tur daha denenir
+        for (let round = 0; round < 2; round++) {
+            if (round) await new Promise(r => setTimeout(r, 1500));
+            for (const url of ENDPOINTS) {
+                const ctrl = new AbortController();
+                const to = setTimeout(() => ctrl.abort(), 18000);
+                try {
+                    const res = await fetch(url, {
+                        method: 'POST', signal: ctrl.signal,
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                        body: 'data=' + encodeURIComponent(query)
+                    });
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const data = await res.json();
+                    if (!data || !Array.isArray(data.elements)) throw new Error('Geçersiz yanıt');
+                    return data.elements;
+                } catch (e) {
+                    lastErr = new Error((e.name === 'AbortError' ? 'zaman aşımı' : e.message) + ' @ ' + new URL(url).hostname);
+                    console.warn('Overpass hatası:', lastErr.message);
+                } finally { clearTimeout(to); }
+            }
         }
         throw lastErr || new Error('Overpass erişilemedi');
     }
@@ -556,7 +564,9 @@ out center tags;`;
             let mosques = [];
             for (const r of RADII) {
                 setStatus(t.scanning.replace('{km}', (r / 1000).toString().replace('.', activeLang === 'tr' ? ',' : '.')), false);
-                const elements = await overpass(buildQuery(pos.lat, pos.lon, r));
+                let elements;
+                try { elements = await overpass(buildQuery(pos.lat, pos.lon, r)); }
+                catch (e) { if (mosques.length) break; throw e; }   // geniş yarıçap başarısız olursa eldeki sonuçlar gösterilir
                 mosques = parseMosques(elements, pos.lat, pos.lon, activeLang, t.default_name);
                 if (mosques.length >= MIN_RESULTS) break;
             }
@@ -570,7 +580,7 @@ out center tags;`;
         } catch (err) {
             console.error('Cami arama hatası:', err);
             container.innerHTML = '';
-            setStatus(t.net_error, true);
+            setStatus(t.net_error + '\n(' + String(err && err.message || err) + ')', true);
         } finally {
             btn.disabled = false;
         }
